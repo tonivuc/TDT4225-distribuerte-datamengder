@@ -1,7 +1,9 @@
 from SqlHelper import SqlHelper
+import os
 
+# Kanskje ha id som STRING og ikke AUTO_INCREMENT
 def create_user_table(sqlHelper):
-    query = """CREATE TABLE IF NOT EXISTS User (
+    query = """CREATE TABLE IF NOT EXISTS User ( 
                 id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
                 has_labels BOOLEAN)
             """
@@ -38,29 +40,51 @@ def create_trackpoint_table(sqlHelper):
     # This adds table_name to the %s variable and executes the query
     sqlHelper.cursor.execute(query)
     sqlHelper.db_connection.commit()
-# def populate_users_table(self, table_name):
-#     query = """CREATE TABLE IF NOT EXISTS %s (
-#                 id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-#                 name VARCHAR(30))
-#             """
-#     # This adds table_name to the %s variable and executes the query
-#     self.cursor.execute(query % table_name)
-#     self.db_connection.commit()
+
+def populate_users_table(self, table_name):
+    query = """CREATE TABLE IF NOT EXISTS %s (
+                id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                name VARCHAR(30))
+            """
+    # This adds table_name to the %s variable and executes the query
+    self.cursor.execute(query % table_name)
+    self.db_connection.commit()
+
+def create_map_of_user_id_and_if_they_have_labels():
+    for (root,dirs,files) in os.walk('./dataset/dataset/Data', topdown=True):
+        print (root)
+        # print (dirs)
+        # print (files)
+        print ('--------------------------------')
+
+def array_of_user_ids_from_file():
+    # Open the file and read its contents into a list of strings
+    with open('./dataset/dataset/labeled_ids.txt', 'r') as f:
+        lines = f.readlines()
+
+    # Strip any whitespace characters from each line and store them in a new list
+    ids = [line.strip() for line in lines]
+
+    # Print the list of IDs
+    print(ids)
 
 def main():
     sqlHelper = None
     try:
-        sqlHelper = SqlHelper()
-        create_user_table(sqlHelper)
-        create_activity_table(sqlHelper)
-        create_trackpoint_table(sqlHelper)
-        # sqlHelper.insert_data(table_name="Person", stringArray=['Bobby', 'Mc', 'McSmack', 'Board'])
-        _ = sqlHelper.fetch_data(table_name="User")
-        __ = sqlHelper.fetch_data(table_name="Activity")
-        ___ = sqlHelper.fetch_data(table_name="TrackPoint")
+        array_of_user_ids_from_file()
+        # sqlHelper = SqlHelper()
+        # create_user_table(sqlHelper)
+        # create_activity_table(sqlHelper)
+        # create_trackpoint_table(sqlHelper)
 
-        # Check that the table is dropped
-        sqlHelper.show_tables()
+
+        # # sqlHelper.insert_data(table_name="Person", stringArray=['Bobby', 'Mc', 'McSmack', 'Board'])
+        # _ = sqlHelper.fetch_data(table_name="User")
+        # __ = sqlHelper.fetch_data(table_name="Activity")
+        # ___ = sqlHelper.fetch_data(table_name="TrackPoint")
+
+        # # Check that the table is dropped
+        # sqlHelper.show_tables()
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:
