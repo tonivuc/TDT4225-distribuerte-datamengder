@@ -9,6 +9,35 @@ def create_user_table(sqlHelper):
     sqlHelper.cursor.execute(query)
     sqlHelper.db_connection.commit()
 
+def create_activity_table(sqlHelper):
+    query = """CREATE TABLE IF NOT EXISTS Activity (
+                id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                user_id INT,
+                transportation_mode VARCHAR(30),
+                start_date_time DATETIME,
+                end_date_time DATETIME,
+                FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+            )
+            """
+    # This adds table_name to the %s variable and executes the query
+    sqlHelper.cursor.execute(query)
+    sqlHelper.db_connection.commit()
+
+def create_trackpoint_table(sqlHelper):
+    query = """CREATE TABLE IF NOT EXISTS TrackPoint (
+                id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                activity_id INT,
+                lat DOUBLE,
+                lon DOUBLE,
+                altitude INT,
+                date_days DOUBLE,
+                date_time DATETIME,
+                FOREIGN KEY (activity_id) REFERENCES Activity(id) ON DELETE CASCADE
+            )
+            """
+    # This adds table_name to the %s variable and executes the query
+    sqlHelper.cursor.execute(query)
+    sqlHelper.db_connection.commit()
 # def populate_users_table(self, table_name):
 #     query = """CREATE TABLE IF NOT EXISTS %s (
 #                 id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
@@ -23,11 +52,13 @@ def main():
     try:
         sqlHelper = SqlHelper()
         create_user_table(sqlHelper)
-        sqlHelper.create_table(table_name="Activity")
-        sqlHelper.create_table(table_name="TrackPoint")
+        create_activity_table(sqlHelper)
+        create_trackpoint_table(sqlHelper)
         # sqlHelper.insert_data(table_name="Person", stringArray=['Bobby', 'Mc', 'McSmack', 'Board'])
         _ = sqlHelper.fetch_data(table_name="User")
-        sqlHelper.drop_table(table_name="Activity")
+        __ = sqlHelper.fetch_data(table_name="Activity")
+        ___ = sqlHelper.fetch_data(table_name="TrackPoint")
+
         # Check that the table is dropped
         sqlHelper.show_tables()
     except Exception as e:

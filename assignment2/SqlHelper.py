@@ -46,4 +46,3 @@ class SqlHelper:
         self.cursor.execute("SHOW TABLES")
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
-
