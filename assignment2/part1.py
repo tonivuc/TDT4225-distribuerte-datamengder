@@ -1,13 +1,12 @@
 from SqlHelper import SqlHelper
 import os
 
-# Kanskje ha id som STRING og ikke AUTO_INCREMENT
+# Table creation
 def create_user_table(sqlHelper):
     query = """CREATE TABLE IF NOT EXISTS User ( 
                 id VARCHAR(30) NOT NULL PRIMARY KEY,
                 has_labels BOOLEAN)
             """
-    # This adds table_name to the %s variable and executes the query
     sqlHelper.cursor.execute(query)
     sqlHelper.db_connection.commit()
 
@@ -21,7 +20,6 @@ def create_activity_table(sqlHelper):
                 FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
             )
             """
-    # This adds table_name to the %s variable and executes the query
     sqlHelper.cursor.execute(query)
     sqlHelper.db_connection.commit()
 
@@ -37,10 +35,15 @@ def create_trackpoint_table(sqlHelper):
                 FOREIGN KEY (activity_id) REFERENCES Activity(id) ON DELETE CASCADE
             )
             """
-    # This adds table_name to the %s variable and executes the query
     sqlHelper.cursor.execute(query)
     sqlHelper.db_connection.commit()
 
+def drop_all_tables(sqlHelper):
+    sqlHelper.drop_table("TrackPoint")
+    sqlHelper.drop_table("Activity")
+    sqlHelper.drop_table("User")
+
+# User stuff
 def create_map_of_user_id_and_if_they_have_labels():
     # for (root,dirs,files) in os.walk('./dataset/dataset/Data', topdown=True):
     #     print (root)
@@ -69,11 +72,6 @@ def array_of_labeled_user_ids_from_file():
     ids = [line.strip() for line in lines]
     return ids
 
-def drop_all_tables(sqlHelper):
-    sqlHelper.drop_table("TrackPoint")
-    sqlHelper.drop_table("Activity")
-    sqlHelper.drop_table("User")
-
 def add_users_to_table(sqlHelper):
     userMap = create_map_of_user_id_and_if_they_have_labels()
     for id, has_labels in userMap.items():
@@ -81,7 +79,9 @@ def add_users_to_table(sqlHelper):
 
     sqlHelper.db_connection.commit()
 
+# Activity stuff
 
+# Trackpoint stuff
 
 def main():
     sqlHelper = None
