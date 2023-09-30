@@ -41,14 +41,6 @@ def create_trackpoint_table(sqlHelper):
     sqlHelper.cursor.execute(query)
     sqlHelper.db_connection.commit()
 
-def populate_user_table(self, table_name):
-    labeled_user_ids_array = array_of_labeled_user_ids_from_file()
-    # Read the files and add them to the database
-
-    # This adds table_name to the %s variable and executes the query
-    self.cursor.execute(query)
-    self.db_connection.commit()
-
 def create_map_of_user_id_and_if_they_have_labels():
     # for (root,dirs,files) in os.walk('./dataset/dataset/Data', topdown=True):
     #     print (root)
@@ -88,6 +80,7 @@ def add_users_to_table(sqlHelper):
         sqlHelper.cursor.execute("INSERT INTO User (id, has_labels) VALUES (%s, %s)", (id, has_labels))
 
     sqlHelper.db_connection.commit()
+
 
 
 def main():
