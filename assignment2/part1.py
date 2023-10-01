@@ -46,11 +46,6 @@ def drop_all_tables(sqlHelper):
 
 # User stuff
 def create_map_of_user_id_and_if_they_have_labels():
-    # for (root,dirs,files) in os.walk('./dataset/dataset/Data', topdown=True):
-    #     print (root)
-    #     print (dirs)
-    #     # print (files)
-    #     print ('--------------------------------')
     user_ids_with_labels = array_of_labeled_user_ids_from_file()
     user_ids = []
     data_dir = './dataset/dataset/Data'
