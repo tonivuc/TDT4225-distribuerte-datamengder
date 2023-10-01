@@ -97,15 +97,20 @@ def read_trackpoints(user_id):
             filepath = os.path.join(path, filename)
 
             trackpoints = []
+            should_add_activity_to_database = True
             
             # Open the file and skip the first 6 lines
             with open(filepath, "r") as f:
+                # First 6 lines are just metadata
                 for i in range(6):
                     next(f)
                 
                 # Read the remaining lines into objects
                 for line in f:
-                    if len(trackpoints) >= 2500:
+                    # If the file has more than 2500 trackpoints, don't add more to the trackpoints array
+                    # We only add activities to the database that have a maximum of 2500 trackpoints
+                    if len(trackpoints) > 2500:
+                        should_add_activity_to_database = False
                         break
                     values = line.strip().split(",")
                     obj = {
@@ -117,7 +122,9 @@ def read_trackpoints(user_id):
                     }
                     trackpoints.append(obj)
 
-        filename_and_trackpoints[filename] = trackpoints
+        # If 
+        if should_add_activity_to_database:
+            filename_and_trackpoints[filename] = trackpoints
     
     return filename_and_trackpoints
 
