@@ -141,12 +141,11 @@ def insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper: SqlHe
         activity_id = sqlHelper.cursor.lastrowid
 
         
-        # Insert the trackpoints into the database
+        # Batch insert the trackpoints into the database
         # Didn't include data_days, but feel free to add it. Needs to be added to filename_and_trackpoints first probably
-        for trackpoint in trackpoints:
-            sql = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s)"
-            values = (activity_id, trackpoint["latitude"], trackpoint["longitude"], trackpoint["altitude"], None, trackpoint["date"] + " " + trackpoint["time"])
-            sqlHelper.cursor.execute(sql, values)
+        sql = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s)"
+        values = [(activity_id, trackpoint["latitude"], trackpoint["longitude"], trackpoint["altitude"], None, trackpoint["date"] + " " + trackpoint["time"]) for trackpoint in trackpoints]
+        sqlHelper.cursor.executemany(sql, values)
 
         # Commit the changes to the database
         sqlHelper.db_connection.commit()
@@ -156,7 +155,6 @@ def insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper: SqlHe
 def main():
     sqlHelper = None
     try:
-        # array_of_user_ids_from_file()
         sqlHelper = SqlHelper()
 
         # When wanting to clear the database and re-create the tables
@@ -168,10 +166,10 @@ def main():
         # sqlHelper.show_tables()
 
         # When wanting to reset the tables and make them empty
-        # sqlHelper.clear_table_contents("Activity")
-        # sqlHelper.reset_table_starting_id_to_0("Activity")
-        # sqlHelper.clear_table_contents("TrackPoint")
-        # sqlHelper.reset_table_starting_id_to_0("TrackPoint")
+        sqlHelper.clear_table_contents("Activity")
+        sqlHelper.reset_table_starting_id_to_0("Activity")
+        sqlHelper.clear_table_contents("TrackPoint")
+        sqlHelper.reset_table_starting_id_to_0("TrackPoint")
 
         # Main code
         filename_and_trackpoints = read_trackpoints("000")
