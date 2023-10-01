@@ -136,8 +136,6 @@ def create_activities_from_trackpoints(filename_and_trackpoints, sqlHelper: SqlH
         # insert_query = """INSERT INTO Activity (user_id, start_date_time, end_date_time) VALUES ({user_id}, {start_date_time}, {end_date_time})"""
 
         
-        
-        
         # Insert the trackpoints into the database
         # for trackpoint in trackpoints:
         #     sql = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (?, ?, ?, ?, ?, ?)"
@@ -163,11 +161,6 @@ def main():
 
         filename_and_trackpoints = read_trackpoints("000")
         create_activities_from_trackpoints(filename_and_trackpoints, sqlHelper, "000")
-        # filename, trackpoints = next(iter(activities.items()))
-        # print(trackpoints)
-        # print(filename)
-
-        # # sqlHelper.insert_data(table_name="Person", stringArray=['Bobby', 'Mc', 'McSmack', 'Board'])
         # _ = sqlHelper.fetch_data(table_name="User")
         __ = sqlHelper.fetch_data(table_name="Activity")
         # ___ = sqlHelper.fetch_data(table_name="TrackPoint")
