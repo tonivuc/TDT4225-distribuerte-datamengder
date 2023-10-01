@@ -136,8 +136,6 @@ def create_activities_from_trackpoints(filename_and_trackpoints, sqlHelper: SqlH
         # insert_query = """INSERT INTO Activity (user_id, start_date_time, end_date_time) VALUES ({user_id}, {start_date_time}, {end_date_time})"""
 
         
-        
-        
         # Insert the trackpoints into the database
         # for trackpoint in trackpoints:
         #     sql = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (?, ?, ?, ?, ?, ?)"
@@ -146,30 +144,6 @@ def create_activities_from_trackpoints(filename_and_trackpoints, sqlHelper: SqlH
 
         # Commit the changes to the database
         sqlHelper.db_connection.commit()
-
-
-    
-
-# I have a directory named Data which contains sub-directories named numerically like 000, 001, 002 etc.
-# Within these directories there is always a directory named Trajectory, which contains a number of .plt files (one for each activity)
-# I want a python function that skips the first 6 lines of each .plt file, then reads the values of each
-# subsequent line into an array of objects. Each object should contain the values read from that line.
-
-# The .plt files start like this:
-# Geolife trajectory
-# WGS 84
-# Altitude is in Feet
-# Reserved 3
-# 0,2,255,My Track,0,0,2,8421376
-# 0
-# 39.984702,116.318417,0,492,39744.1201851852,2008-10-23,02:53:04
-# 39.984683,116.31845,0,492,39744.1202546296,2008-10-23,02:53:10
-# 39.984686,116.318417,0,492,39744.1203125,2008-10-23,02:53:15
-# 39.984688,116.318385,0,492,39744.1203703704,2008-10-23,02:53:20
-# 39.984655,116.318263,0,492,39744.1204282407,2008-10-23,02:53:25
-
-# If there are more than 2500 data rows in the plt file (not including the metadata at the top), the file should be ignored.
-# For the first iteration of this function I just want it to read the directory named 000.
 
 # Trackpoint stuff
 
@@ -187,11 +161,6 @@ def main():
 
         filename_and_trackpoints = read_trackpoints("000")
         create_activities_from_trackpoints(filename_and_trackpoints, sqlHelper, "000")
-        # filename, trackpoints = next(iter(activities.items()))
-        # print(trackpoints)
-        # print(filename)
-
-        # # sqlHelper.insert_data(table_name="Person", stringArray=['Bobby', 'Mc', 'McSmack', 'Board'])
         # _ = sqlHelper.fetch_data(table_name="User")
         __ = sqlHelper.fetch_data(table_name="Activity")
         # ___ = sqlHelper.fetch_data(table_name="TrackPoint")
