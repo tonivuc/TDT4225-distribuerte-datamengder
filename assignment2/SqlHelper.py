@@ -30,8 +30,8 @@ class SqlHelper:
         query = "SELECT * FROM %s"
         self.cursor.execute(query % table_name)
         rows = self.cursor.fetchall()
-        print("Data from table %s, raw format:" % table_name)
-        print(rows)
+        # print("Data from table %s, raw format:" % table_name)
+        # print(rows)
         # Using tabulate to show the table in a nice way
         print("Data from table %s, tabulated:" % table_name)
         print(tabulate(rows, headers=self.cursor.column_names))
@@ -46,3 +46,15 @@ class SqlHelper:
         self.cursor.execute("SHOW TABLES")
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
+
+    def reset_table_starting_id_to_0(self, table_name):
+        query = "ALTER TABLE %s AUTO_INCREMENT = 0"
+        self.cursor.execute(query % table_name)
+        print("Reset the starting table row id in table %s to 0" % table_name)
+
+    def clear_table_contents(self, table_name):
+        query = "DELETE FROM %s"
+        self.cursor.execute(query % table_name)
+        print("Deleted everything in table %s" % table_name)
+
+    

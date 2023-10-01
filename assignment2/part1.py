@@ -111,7 +111,7 @@ def read_trackpoints(user_id):
                     obj = {
                         "latitude": float(values[0]),
                         "longitude": float(values[1]),
-                        "altitude": float(values[2]),
+                        "altitude": float(values[3]),
                         "date": values[5],
                         "time": values[6]
                     }
@@ -121,7 +121,7 @@ def read_trackpoints(user_id):
     
     return filename_and_trackpoints
 
-def create_activities_from_trackpoints(filename_and_trackpoints, sqlHelper: SqlHelper, user_id):
+def insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper: SqlHelper, user_id: str):
     for filename, trackpoints in filename_and_trackpoints.items():
         # Get the start and end date/time from the trackpoints
         start_date_time = trackpoints[0]["date"] + " " + trackpoints[0]["time"]
@@ -130,17 +130,16 @@ def create_activities_from_trackpoints(filename_and_trackpoints, sqlHelper: SqlH
         # Insert the activity into the database
         sql = "INSERT INTO Activity (user_id, start_date_time, end_date_time) VALUES (%s, %s, %s)"
         values = (user_id, start_date_time, end_date_time)
-        activity_id = sqlHelper.cursor.execute(sql, values)
-        print(activity_id)
-
-        # insert_query = """INSERT INTO Activity (user_id, start_date_time, end_date_time) VALUES ({user_id}, {start_date_time}, {end_date_time})"""
+        sqlHelper.cursor.execute(sql, values)
+        activity_id = sqlHelper.cursor.lastrowid
 
         
         # Insert the trackpoints into the database
-        # for trackpoint in trackpoints:
-        #     sql = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (?, ?, ?, ?, ?, ?)"
-        #     values = (activity_id, trackpoint["latitude"], trackpoint["longitude"], trackpoint["altitude"], None, trackpoint["date"] + " " + trackpoint["time"])
-        #     sqlHelper.cursor.execute(sql, values)
+        # Didn't include data_days, but feel free to add it. Needs to be added to filename_and_trackpoints first probably
+        for trackpoint in trackpoints:
+            sql = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s)"
+            values = (activity_id, trackpoint["latitude"], trackpoint["longitude"], trackpoint["altitude"], None, trackpoint["date"] + " " + trackpoint["time"])
+            sqlHelper.cursor.execute(sql, values)
 
         # Commit the changes to the database
         sqlHelper.db_connection.commit()
@@ -152,21 +151,31 @@ def main():
     try:
         # array_of_user_ids_from_file()
         sqlHelper = SqlHelper()
+
+        # When wanting to clear the database and re-create the tables
         # drop_all_tables(sqlHelper)
-        
         # create_user_table(sqlHelper)
         # add_users_to_table(sqlHelper)
         # create_activity_table(sqlHelper)
         # create_trackpoint_table(sqlHelper)
+        # sqlHelper.show_tables()
 
+        # When wanting to reset the tables and make them empty
+        # sqlHelper.clear_table_contents("Activity")
+        # sqlHelper.reset_table_starting_id_to_0("Activity")
+        # sqlHelper.clear_table_contents("TrackPoint")
+        # sqlHelper.reset_table_starting_id_to_0("TrackPoint")
+
+        # Main code
         filename_and_trackpoints = read_trackpoints("000")
-        create_activities_from_trackpoints(filename_and_trackpoints, sqlHelper, "000")
+        insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper, "000")
         # _ = sqlHelper.fetch_data(table_name="User")
         __ = sqlHelper.fetch_data(table_name="Activity")
-        # ___ = sqlHelper.fetch_data(table_name="TrackPoint")
+        ___ = sqlHelper.fetch_data(table_name="TrackPoint")
 
-        # # Check that the table is dropped
+
         # sqlHelper.show_tables()
+
     except Exception as e:
         print("ERROR: Failed to use database:", e)
         traceback.print_exc()
