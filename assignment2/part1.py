@@ -80,6 +80,11 @@ def add_users_to_table(sqlHelper):
 
     sqlHelper.db_connection.commit()
 
+def get_user_ids(sqlHelper):
+    sqlHelper.cursor.execute("SELECT id FROM User")
+    rows = sqlHelper.cursor.fetchall()
+    return [row[0] for row in rows]
+
 # Activity stuff
 # One activity consits of many trackpoints (each trackpoint refers to an activity, but activities are freestanding entries with a start and end time)
 # Can probably insert the activities in one go, and then add the transportation modes later?
@@ -147,10 +152,17 @@ def insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper: SqlHe
         values = [(activity_id, trackpoint["latitude"], trackpoint["longitude"], trackpoint["altitude"], None, trackpoint["date"] + " " + trackpoint["time"]) for trackpoint in trackpoints]
         sqlHelper.cursor.executemany(sql, values)
 
-        # Commit the changes to the database
+        # Commit the changes to the databases
         sqlHelper.db_connection.commit()
 
 # Trackpoint stuff
+def read_and_insert_activities_and_trackpoints_for_users(sqlHelper):
+    user_ids = get_user_ids(sqlHelper)
+    for user_id in user_ids:
+        filename_and_trackpoints = read_trackpoints(user_id)
+        insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper, user_id)
+        print("Inserted activities and trackpoints for user %s" % user_id)
+
 
 def main():
     sqlHelper = None
@@ -166,17 +178,17 @@ def main():
         # sqlHelper.show_tables()
 
         # When wanting to reset the tables and make them empty
-        sqlHelper.clear_table_contents("Activity")
-        sqlHelper.reset_table_starting_id_to_0("Activity")
-        sqlHelper.clear_table_contents("TrackPoint")
-        sqlHelper.reset_table_starting_id_to_0("TrackPoint")
+        # sqlHelper.clear_table_contents("Activity")
+        # sqlHelper.reset_table_starting_id_to_0("Activity")
+        # sqlHelper.clear_table_contents("TrackPoint")
+        # sqlHelper.reset_table_starting_id_to_0("TrackPoint")
 
         # Main code
-        filename_and_trackpoints = read_trackpoints("000")
-        insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper, "000")
+        read_and_insert_activities_and_trackpoints_for_users(sqlHelper)
+
         # _ = sqlHelper.fetch_data(table_name="User")
         __ = sqlHelper.fetch_data(table_name="Activity")
-        ___ = sqlHelper.fetch_data(table_name="TrackPoint")
+        # ___ = sqlHelper.fetch_data(table_name="TrackPoint")
 
 
         # sqlHelper.show_tables()
