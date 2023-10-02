@@ -1,6 +1,7 @@
 from SqlHelper import SqlHelper
 import os
 import traceback
+import pandas as pd
 
 # Table creation
 def create_user_table(sqlHelper):
@@ -134,9 +135,29 @@ def insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper: SqlHe
         start_date_time = trackpoints[0]["date"] + " " + trackpoints[0]["time"]
         end_date_time = trackpoints[-1]["date"] + " " + trackpoints[-1]["time"]
         
-        # Insert the activity into the database
-        sql = "INSERT INTO Activity (user_id, start_date_time, end_date_time) VALUES (%s, %s, %s)"
-        values = (user_id, start_date_time, end_date_time)
+        transportation_mode = "null" #usikker på denne her
+        # Get transportation_mode for labeled users (i.e. users that has a labels.txt file)
+        # Check if user has labels
+        if (user_id in array_of_labeled_user_ids_from_file):
+            # file_path = '/Users/Torjus/TDT4225-distribuerte-datamengder/dataset/dataset/Data/'+user_id+'/labels.txt.txt'
+            absolute_path = os.path.dirname(__file__)
+            relative_path = 'dataset/dataset/Data/'+'userID'+'/labels.txt.txt'
+            full_path = os.path.join(absolute_path, relative_path)
+
+            # Read the labels.txt file for the user = user_id
+            data = pd.read_csv(full_path, delimiter=' ')
+            start_times = pd.to_datetime(data['Start Time'])
+            end_times = pd.to_datetime(data['End Time'])
+            transportation_modes = data['Transportation Mode']
+
+            # Check if there is a match for start_date_time and end_date_time in start_times and end_times and that it is the same line (index)
+            if start_date_time in start_times and end_date_time in end_times and start_times.index(start_date_time) == end_times.index(end_date_time):
+                # Get the transportation_mode by using the index
+                transportation_mode = transportation_modes(start_times.index(start_date_time))
+
+        # Insert the activity into the database, now also transportation_mode
+        sql = "INSERT INTO Activity (user_id, start_date_time, end_date_time, transportation_mode) VALUES (%s, %s, %s, '%s')"
+        values = (user_id, start_date_time, end_date_time, transportation_mode)
         sqlHelper.cursor.execute(sql, values)
         activity_id = sqlHelper.cursor.lastrowid
 
