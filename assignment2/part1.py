@@ -41,8 +41,8 @@ def create_trackpoint_table(sqlHelper):
     sqlHelper.db_connection.commit()
 
 def drop_all_tables(sqlHelper):
-    #sqlHelper.drop_table("TrackPoint")
-    #sqlHelper.drop_table("Activity")
+    sqlHelper.drop_table("TrackPoint")
+    sqlHelper.drop_table("Activity")
     sqlHelper.drop_table("User")
 
 # User stuff
@@ -129,11 +129,14 @@ def read_trackpoints(user_id):
     return filename_and_trackpoints
 
 def insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper: SqlHelper, user_id: str):
-    userIsRead = False
     labeled_users = array_of_labeled_user_ids_from_file()
     # Initialize lists for start times, end times, and transportation modes
     start_and_end_times = {}
     transportation_modes_file = {}
+
+    # Check if user has labels
+    if user_id in labeled_users:
+        start_and_end_times, transportation_modes_file = readfile(user_id)
 
     for filename, trackpoints in filename_and_trackpoints.items():
         # Get the start and end date/time from the trackpoints
@@ -147,14 +150,8 @@ def insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper: SqlHe
         # For activities without labels transportation mode is None
         transportation_mode = "None" 
         # Get transportation_mode for labeled users (i.e. users that has a labels.txt file)
-        # Check if user has labels
-        if user_id in labeled_users:
-           if not userIsRead:
-                # User is read
-                userIsRead = True
-                start_and_end_times, transportation_modes_file = readfile(user_id)
 
-            # Check if start time is in the dictionary
+        # Check if start time is in the dictionary
         if start_date_time_in_datetime in start_and_end_times:
             # Check if there is a match for start time and end time in the dict
             if start_and_end_times[start_date_time_in_datetime] == end_date_time_in_datetime:
@@ -184,7 +181,7 @@ def read_and_insert_activities_and_trackpoints_for_users(sqlHelper):
         insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper, user_id)
         print("Inserted activities and trackpoints for user %s" % user_id)
 
-def readfile(user_id):
+def readfile(user_id): # Maybe rename this function
     relative_path = 'dataset/dataset/Data/'+str(user_id)+'/labels.txt'
     full_path = os.path.abspath(relative_path)
 
@@ -209,8 +206,8 @@ def readfile(user_id):
             end_datetime_file = datetime.strptime(f"{end_date} {end_time}", "%Y/%m/%d %H:%M:%S")
 
             # Append values to respective lists
-            start_and_end_times[start_datetime_file] = end_datetime_file
-            transportation_modes_file[end_datetime_file] = transportation_mode_file
+            start_and_end_times[start_datetime_file] = end_datetime_file # So the start_datetime_key has the end_datatime as the value
+            transportation_modes_file[end_datetime_file] = transportation_mode_file # The end_datetime has the transportation_mode as the value
 
     return start_and_end_times, transportation_modes_file
 
@@ -218,31 +215,35 @@ def main():
     sqlHelper = None
     try:
         sqlHelper = SqlHelper()
-        user_id = '020'
+        
         
         # When wanting to clear the database and re-create the tables
-        #drop_all_tables(sqlHelper)
-        # create_user_table(sqlHelper)
-        # add_users_to_table(sqlHelper)
-        #create_activity_table(sqlHelper)
-        #create_trackpoint_table(sqlHelper)
-
-        filenametrackpoints = read_trackpoints(user_id)
-        insert_activities_and_trackpoints(filenametrackpoints, sqlHelper, user_id)
-        #sqlHelper.show_tables()
+        drop_all_tables(sqlHelper)
+        create_user_table(sqlHelper)
+        create_activity_table(sqlHelper)
+        create_trackpoint_table(sqlHelper)
 
         # When wanting to reset the tables and make them empty
-        #sqlHelper.clear_table_contents("Activity")
-        #sqlHelper.reset_table_starting_id_to_0("Activity")
-        #sqlHelper.clear_table_contents("TrackPoint")
-        #sqlHelper.reset_table_starting_id_to_0("TrackPoint")
+        sqlHelper.clear_table_contents("Activity")
+        sqlHelper.reset_table_starting_id_to_0("Activity")
+        sqlHelper.clear_table_contents("TrackPoint")
+        sqlHelper.reset_table_starting_id_to_0("TrackPoint")
+
+        add_users_to_table(sqlHelper)
+
+        # read_and_insert_activities_and_trackpoints_for_users(sqlHelper)
+        filenametrackpoints = read_trackpoints('010')
+        insert_activities_and_trackpoints(filenametrackpoints, sqlHelper, '010')
+        #sqlHelper.show_tables()
+
+
 
         # Main code
         # read_and_insert_activities_and_trackpoints_for_users(sqlHelper)
 
-        #_ = sqlHelper.fetch_data(table_name="User")
-        _ = sqlHelper.fetch_data(table_name="Activity")
-        _ = sqlHelper.fetch_data(table_name="TrackPoint")
+        # sqlHelper.fetch_data(table_name="User")
+        # sqlHelper.fetch_data(table_name="Activity")
+        # sqlHelper.fetch_data(table_name="TrackPoint")
 
         # sqlHelper.show_tables()
 
