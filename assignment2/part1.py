@@ -231,9 +231,7 @@ def main():
 
         add_users_to_table(sqlHelper)
 
-        # read_and_insert_activities_and_trackpoints_for_users(sqlHelper)
-        filenametrackpoints = read_trackpoints('010')
-        insert_activities_and_trackpoints(filenametrackpoints, sqlHelper, '010')
+        read_and_insert_activities_and_trackpoints_for_users(sqlHelper)
         #sqlHelper.show_tables()
 
 
