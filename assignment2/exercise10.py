@@ -1,10 +1,6 @@
 from SqlHelper import SqlHelper
 import traceback
-from tabulate import tabulate
-from datetime import datetime, timedelta
-
-# Each user has a few different transportation modes
-# For each user, create a table of the activities with transportation modes that they have done
+from datetime import timedelta
 
 def fetchData(sqlHelper, query):
     sqlHelper.cursor.execute(query)
@@ -34,6 +30,7 @@ def find_longest_distances_traveled_per_transportation_mode_for_user(sqlHelper, 
     print("Checking longest distance for transport modes for user: {}".format(user_id))
     user_activities_with_transportation_mode = find_transportation_modes_for_user(sqlHelper, user_id)
 
+    # Contains transportation mode and distance like this: {'bus': 30144.46612781088, 'taxi': 8383.172444047177}
     transportation_modes_dict = {}
 
     # Iterate through the list and populate the dictionary
@@ -63,6 +60,8 @@ def get_all_transport_modes(sqlHelper):
 def find_distance_traveled_transportation_mode_all_users(sqlHelper):
     transport_modes = get_all_transport_modes(sqlHelper)
     transport_mode_distance_and_user_id = {}
+
+    # Create a dictionary with the transport_mode as key, and distance and user_id as values
     for i, transport_mode in enumerate(transport_modes):
         distance = -1  # Default value
         user_id = ''    # Default value
@@ -83,6 +82,12 @@ def find_distance_traveled_transportation_mode_all_users(sqlHelper):
 def get_distances_between_trackpoints(sqlHelper, activity_id, activity_start_datetime):
     # activity_start_datetime = datetime.strptime(activity_start_datetime, "%Y-%m-%d %H:%M:%S") # Use this if input is string
     activity_start_plus_24h = activity_start_datetime + timedelta(hours=24)
+
+    # The query calculates the total distance traveled between consecutive trackpoints 
+    # for a specified activity and within a specified date and time range (24h from activity start)
+
+    # The subquery gets us the next trackpoint. And the parent query calculates the distance between them.
+    # Finally the parent of that one sums up all the distances in each row, giving us the total distance traveled.
     query = """
     SELECT 
         SUM(distance_to_next_trackpoint) AS total_distance
