@@ -8,6 +8,7 @@ class MongoHelper:
         self.connection = DbConnector()
         self.client = self.connection.client
         self.db = self.connection.db
+        self.db_name = self.connection.db.name
 
     def create_coll(self, collection_name):
         collection = self.db.create_collection(collection_name)    
@@ -53,5 +54,5 @@ class MongoHelper:
 
         
     def show_coll(self):
-        collections = self.client['test'].list_collection_names()
+        collections = self.client[self.db_name].list_collection_names()
         print(collections)

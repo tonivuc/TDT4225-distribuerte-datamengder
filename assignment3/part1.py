@@ -39,17 +39,18 @@ def insert_users(mongoHelper: MongoHelper):
     for id, has_labels in userMap.items():
         User.insert_one({ "_id": id, "has_labels": has_labels })
 
-def get_user_ids(sqlHelper):
-    sqlHelper.cursor.execute("SELECT id FROM User")
-    rows = sqlHelper.cursor.fetchall()
-    return [row[0] for row in rows]
+def get_user_ids(mongoHelper: MongoHelper):
+    User = mongoHelper.db["User"]
+    return [user["_id"] for user in User.find(projection=["_id"])]
 
-def read_and_insert_activities_and_trackpoints_for_users(sqlHelper):
-    user_ids = get_user_ids(sqlHelper)
-    for user_id in user_ids:
-        filename_and_trackpoints = read_trackpoints(user_id)
+def read_and_insert_activities_and_trackpoints_for_users(mongoHelper: MongoHelper):
+    user_ids = get_user_ids(mongoHelper)
+    pprint(user_ids)
+    
+    # for user_id in user_ids:
+        # filename_and_trackpoints = read_trackpoints(user_id)
         # insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper, user_id) #TODO
-        print("Inserted activities and trackpoints for user %s" % user_id)
+        # print("Inserted activities and trackpoints for user %s" % user_id)
 
 # Activity stuff
 # One activity consits of many trackpoints (each trackpoint refers to an activity, but activities are freestanding entries with a start and end time)
@@ -106,7 +107,8 @@ def main():
         # create_collections(mongoHelper)
 
         # Inserting data
-        insert_users(mongoHelper)
+        # insert_users(mongoHelper)
+        read_and_insert_activities_and_trackpoints_for_users(mongoHelper)
         mongoHelper.show_coll()
         # mongoHelper.insert_documents(collection_name="Person")
         # mongoHelper.fetch_documents(collection_name="Person")
@@ -114,7 +116,7 @@ def main():
         # program.drop_coll(collection_name='person')
         # program.drop_coll(collection_name='users')
         # Check that the table is dropped
-        mongoHelper.show_coll()
+        # mongoHelper.show_coll()
     except Exception as e:
         print("ERROR: Failed to use database:", e)
         traceback.print_exc()
