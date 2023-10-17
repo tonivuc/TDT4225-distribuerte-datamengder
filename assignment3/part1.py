@@ -2,6 +2,7 @@ from pprint import pprint
 from MongoHelper import MongoHelper
 import os
 import traceback
+from datetime import datetime
 
 def create_collections(mongoHelper: MongoHelper):
     mongoHelper.create_coll(collection_name="User")
@@ -46,11 +47,90 @@ def get_user_ids(mongoHelper: MongoHelper):
 def read_and_insert_activities_and_trackpoints_for_users(mongoHelper: MongoHelper):
     user_ids = get_user_ids(mongoHelper)
     pprint(user_ids)
+
+    filename_and_trackpoints = read_trackpoints("001")
+    insert_activities_and_trackpoints(filename_and_trackpoints, mongoHelper, "001")
     
     # for user_id in user_ids:
         # filename_and_trackpoints = read_trackpoints(user_id)
+        # pprint(filename_and_trackpoints)
         # insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper, user_id) #TODO
         # print("Inserted activities and trackpoints for user %s" % user_id)
+
+def read_activity_info(user_id):
+    relative_path = 'dataset/dataset/Data/'+str(user_id)+'/labels.txt'
+    full_path = os.path.abspath(relative_path)
+
+    start_and_end_times = {}
+    transportation_modes_file = {}
+
+    # Read the labels.txt file line by line
+    with open(full_path, 'r') as file:
+        # Skip the header line if it exists
+        next(file)
+
+        # Process each line
+        for line in file:
+            # Split the line into parts based on spaces
+            parts = line.strip().split()
+
+            # Extract date and time components
+            start_date, start_time, end_date, end_time, transportation_mode_file = parts
+
+            # Combine date and time components into datetime objects
+            start_datetime_file = datetime.strptime(f"{start_date} {start_time}", "%Y/%m/%d %H:%M:%S")
+            end_datetime_file = datetime.strptime(f"{end_date} {end_time}", "%Y/%m/%d %H:%M:%S")
+
+            # Append values to respective lists
+            start_and_end_times[start_datetime_file] = end_datetime_file # So the start_datetime_key has the end_datatime as the value
+            transportation_modes_file[end_datetime_file] = transportation_mode_file # The end_datetime has the transportation_mode as the value
+
+    return start_and_end_times, transportation_modes_file
+
+def insert_activities_and_trackpoints(filename_and_trackpoints, mongoHelper: MongoHelper, user_id: str):
+    labeled_users = array_of_labeled_user_ids_from_file()
+    # Initialize lists for start times, end times, and transportation modes
+    start_and_end_times = {}
+    transportation_modes_file = {}
+
+    # Check if user has labels
+    if user_id in labeled_users:
+        start_and_end_times, transportation_modes_file = read_activity_info(user_id)
+
+    for filename, trackpoints in filename_and_trackpoints.items():
+        # Get the start and end date/time from the trackpoints
+        start_date_time = trackpoints[0]["date"] + " " + trackpoints[0]["time"]
+        end_date_time = trackpoints[-1]["date"] + " " + trackpoints[-1]["time"]
+        
+        # Convert the points above into datetime to be able to compare with labels.txt values
+        start_date_time_in_datetime = datetime.strptime(start_date_time.replace('-', '/'), "%Y/%m/%d %H:%M:%S")
+        end_date_time_in_datetime = datetime.strptime(end_date_time.replace('-', '/'), "%Y/%m/%d %H:%M:%S")
+                
+        # For activities without labels transportation mode is None
+        transportation_mode = "None" 
+        # Get transportation_mode for labeled users (i.e. users that has a labels.txt file)
+
+        # Check if start time is in the dictionary
+        if start_date_time_in_datetime in start_and_end_times:
+            # Check if there is a match for start time and end time in the dict
+            if start_and_end_times[start_date_time_in_datetime] == end_date_time_in_datetime:
+                transportation_mode = transportation_modes_file[end_date_time_in_datetime]
+        
+        # # Insert the activity into the database, now also transportation_mode
+        # sql = "INSERT INTO Activity (user_id, start_date_time, end_date_time, transportation_mode) VALUES (%s, %s, %s, %s)"
+        # values = (user_id, start_date_time, end_date_time, transportation_mode)
+        # sqlHelper.cursor.execute(sql, values)
+        # activity_id = sqlHelper.cursor.lastrowid
+
+        
+        # # Batch insert the trackpoints into the database
+        # # Didn't include data_days, but feel free to add it. Needs to be added to filename_and_trackpoints first probably
+        # sql = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s)"
+        # values = [(activity_id, trackpoint["latitude"], trackpoint["longitude"], trackpoint["altitude"], None, trackpoint["date"] + " " + trackpoint["time"]) for trackpoint in trackpoints]
+        # sqlHelper.cursor.executemany(sql, values)
+
+        # # Commit the changes to the databases
+        # sqlHelper.db_connection.commit()
 
 # Activity stuff
 # One activity consits of many trackpoints (each trackpoint refers to an activity, but activities are freestanding entries with a start and end time)
