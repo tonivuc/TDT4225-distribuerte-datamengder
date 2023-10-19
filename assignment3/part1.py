@@ -42,7 +42,8 @@ def insert_users(mongoHelper: MongoHelper):
 
 def get_user_ids(mongoHelper: MongoHelper):
     User = mongoHelper.db["User"]
-    return [user["_id"] for user in User.find(projection=["_id"])]
+    # 1 means ASCENDING when it comes to sorting
+    return [user["_id"] for user in User.find(projection=["_id"]).sort([("_id", 1)])]
 
 def read_and_insert_activities_and_trackpoints_for_users(mongoHelper: MongoHelper):
     user_ids = get_user_ids(mongoHelper)
