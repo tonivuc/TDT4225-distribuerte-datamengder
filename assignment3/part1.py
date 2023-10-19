@@ -38,7 +38,7 @@ def insert_users(mongoHelper: MongoHelper):
     User = mongoHelper.db["User"]
 
     for id, has_labels in userMap.items():
-        User.insert_one({ "_id": id, "has_labels": has_labels, "activityIds": [] })
+        User.insert_one({ "_id": id, "has_labels": has_labels, "activity_ids": [] })
 
 def get_user_ids(mongoHelper: MongoHelper):
     User = mongoHelper.db["User"]
@@ -46,16 +46,15 @@ def get_user_ids(mongoHelper: MongoHelper):
 
 def read_and_insert_activities_and_trackpoints_for_users(mongoHelper: MongoHelper):
     user_ids = get_user_ids(mongoHelper)
-    pprint(user_ids)
 
-    filename_and_trackpoints = read_trackpoints("001")
-    insert_activities_and_trackpoints(filename_and_trackpoints, mongoHelper, "001")
+    # For debugging: Just write for one user
+    # filename_and_trackpoints = read_trackpoints("001")
+    # insert_activities_and_trackpoints(filename_and_trackpoints, mongoHelper, "001")
     
-    # for user_id in user_ids:
-        # filename_and_trackpoints = read_trackpoints(user_id)
-        # pprint(filename_and_trackpoints)
-        # insert_activities_and_trackpoints(filename_and_trackpoints, sqlHelper, user_id) #TODO
-        # print("Inserted activities and trackpoints for user %s" % user_id)
+    for user_id in user_ids:
+        filename_and_trackpoints = read_trackpoints(user_id)
+        insert_activities_and_trackpoints(filename_and_trackpoints, mongoHelper, user_id)
+        print("Inserted activities and trackpoints for user %s" % user_id)
 
 def read_activity_info(user_id):
     relative_path = 'dataset/dataset/Data/'+str(user_id)+'/labels.txt'
@@ -98,13 +97,10 @@ def insert_activities_and_trackpoints(filename_and_trackpoints, mongoHelper: Mon
         start_and_end_times, transportation_modes_file = read_activity_info(user_id)
 
     for filename, trackpoints in filename_and_trackpoints.items():
-        # Get the start and end date/time from the trackpoints
-        start_date_time = trackpoints[0]["date"] + " " + trackpoints[0]["time"]
-        end_date_time = trackpoints[-1]["date"] + " " + trackpoints[-1]["time"]
         
         # Convert the points above into datetime to be able to compare with labels.txt values
-        start_date_time_in_datetime = datetime.strptime(start_date_time.replace('-', '/'), "%Y/%m/%d %H:%M:%S")
-        end_date_time_in_datetime = datetime.strptime(end_date_time.replace('-', '/'), "%Y/%m/%d %H:%M:%S")
+        start_date_time_in_datetime = trackpoints[0]["date_time"]
+        end_date_time_in_datetime = trackpoints[-1]["date_time"]
                 
         # For activities without labels transportation mode is None
         transportation_mode = "None" 
@@ -115,18 +111,12 @@ def insert_activities_and_trackpoints(filename_and_trackpoints, mongoHelper: Mon
             # Check if there is a match for start time and end time in the dict
             if start_and_end_times[start_date_time_in_datetime] == end_date_time_in_datetime:
                 transportation_mode = transportation_modes_file[end_date_time_in_datetime]
-        
-        # # Insert the activity into the database, now also transportation_mode
-        # sql = "INSERT INTO Activity (user_id, start_date_time, end_date_time, transportation_mode) VALUES (%s, %s, %s, %s)"
-        # values = (user_id, start_date_time, end_date_time, transportation_mode)
-        # sqlHelper.cursor.execute(sql, values)
-        # activity_id = sqlHelper.cursor.lastrowid
 
         Activity = mongoHelper.db["Activity"]
         activity_insert_result = Activity.insert_one({"user_id": user_id, "start_date_time": start_date_time_in_datetime, "end_date_time": end_date_time_in_datetime, "transportation_mode": transportation_mode })
-        # Also add the activity array to the array in the user collection
+        # Also add the activity id to the array in the User document
         User = mongoHelper.db["User"]
-        User.update_one({"user_id": user_id}, {
+        User.update_one({"_id": user_id}, {
             "$push": {
                 "activity_ids": activity_insert_result.inserted_id
             }
@@ -134,13 +124,9 @@ def insert_activities_and_trackpoints(filename_and_trackpoints, mongoHelper: Mon
 
         
         # # Batch insert the trackpoints into the database
-        # # Didn't include data_days, but feel free to add it. Needs to be added to filename_and_trackpoints first probably
-        # sql = "INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s, %s)"
-        # values = [(activity_id, trackpoint["latitude"], trackpoint["longitude"], trackpoint["altitude"], None, trackpoint["date"] + " " + trackpoint["time"]) for trackpoint in trackpoints]
-        # sqlHelper.cursor.executemany(sql, values)
-
-        # # Commit the changes to the databases
-        # sqlHelper.db_connection.commit()
+        TrackPoint = mongoHelper.db["TrackPoint"]
+        trackpoints_to_insert = [{"activity_id": activity_insert_result.inserted_id, "lat": trackpoint["latitude"], "lon": trackpoint["longitude"], "altitude": trackpoint["altitude"], "date_time": trackpoint["date_time"]} for trackpoint in trackpoints]
+        TrackPoint.insert_many(trackpoints_to_insert)
 
 # Activity stuff
 # One activity consits of many trackpoints (each trackpoint refers to an activity, but activities are freestanding entries with a start and end time)
@@ -175,12 +161,14 @@ def read_trackpoints(user_id):
                         should_add_activity_to_database = False
                         break
                     values = line.strip().split(",")
+                    date = values[5]
+                    time = values[6]
+                    date_time_string = date + " " + time 
                     obj = {
                         "latitude": float(values[0]),
                         "longitude": float(values[1]),
                         "altitude": float(values[3]),
-                        "date": values[5],
-                        "time": values[6]
+                        "date_time": datetime.strptime(date_time_string.replace('-', '/'), "%Y/%m/%d %H:%M:%S")
                     }
                     trackpoints.append(obj)
 
@@ -210,13 +198,6 @@ def main():
         insert_users(mongoHelper)
         read_and_insert_activities_and_trackpoints_for_users(mongoHelper)
         mongoHelper.show_coll()
-        # mongoHelper.insert_documents(collection_name="Person")
-        # mongoHelper.fetch_documents(collection_name="Person")
-        # mongoHelper.drop_coll(collection_name="Person")
-        # program.drop_coll(collection_name='person')
-        # program.drop_coll(collection_name='users')
-        # Check that the table is dropped
-        # mongoHelper.show_coll()
     except Exception as e:
         print("ERROR: Failed to use database:", e)
         traceback.print_exc()
