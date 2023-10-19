@@ -3,6 +3,7 @@ from MongoHelper import MongoHelper
 import os
 import traceback
 from datetime import datetime
+import pymongo
 
 def create_collections(mongoHelper: MongoHelper):
     mongoHelper.create_coll(collection_name="User")
@@ -190,14 +191,19 @@ def main():
     try:
         mongoHelper = MongoHelper()
         # First-time setup code
-        # create_collections(mongoHelper)
+        create_collections(mongoHelper)
 
         # Code to delete everything in the collections and reset the database
-        clear_all_collections(mongoHelper)
+        #clear_all_collections(mongoHelper)
 
         # Inserting data
         insert_users(mongoHelper)
         read_and_insert_activities_and_trackpoints_for_users(mongoHelper)
+
+        # Add index
+        print("Adding index for quickly finding trackpoints that belong to a specific activity")
+        mongoHelper.db["TrackPoint"].create_index([("activity_id", pymongo.ASCENDING)])
+        print("Index added")
         mongoHelper.show_coll()
     except Exception as e:
         print("ERROR: Failed to use database:", e)

@@ -1,4 +1,4 @@
-from pymongo import MongoClient, version
+from pymongo import MongoClient
 
 
 class DbConnector:
