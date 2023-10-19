@@ -38,7 +38,7 @@ def insert_users(mongoHelper: MongoHelper):
     User = mongoHelper.db["User"]
 
     for id, has_labels in userMap.items():
-        User.insert_one({ "_id": id, "has_labels": has_labels })
+        User.insert_one({ "_id": id, "has_labels": has_labels, "activityIds": [] })
 
 def get_user_ids(mongoHelper: MongoHelper):
     User = mongoHelper.db["User"]
@@ -122,6 +122,16 @@ def insert_activities_and_trackpoints(filename_and_trackpoints, mongoHelper: Mon
         # sqlHelper.cursor.execute(sql, values)
         # activity_id = sqlHelper.cursor.lastrowid
 
+        Activity = mongoHelper.db["Activity"]
+        activity_insert_result = Activity.insert_one({"user_id": user_id, "start_date_time": start_date_time_in_datetime, "end_date_time": end_date_time_in_datetime, "transportation_mode": transportation_mode })
+        # Also add the activity array to the array in the user collection
+        User = mongoHelper.db["User"]
+        User.update_one({"user_id": user_id}, {
+            "$push": {
+                "activity_ids": activity_insert_result.inserted_id
+            }
+        })
+
         
         # # Batch insert the trackpoints into the database
         # # Didn't include data_days, but feel free to add it. Needs to be added to filename_and_trackpoints first probably
@@ -179,6 +189,13 @@ def read_trackpoints(user_id):
             filename_and_trackpoints[filename] = trackpoints
     return filename_and_trackpoints
 
+def clear_all_collections(mongoHelper: MongoHelper):
+    mongoHelper.drop_coll(collection_name="User")
+    mongoHelper.drop_coll(collection_name="Activity")
+    mongoHelper.drop_coll(collection_name="TrackPoint")
+    print("Collections dropped")
+    mongoHelper.show_coll()
+
 def main():
     mongoHelper = None
     try:
@@ -186,8 +203,11 @@ def main():
         # First-time setup code
         # create_collections(mongoHelper)
 
+        # Code to delete everything in the collections and reset the database
+        clear_all_collections(mongoHelper)
+
         # Inserting data
-        # insert_users(mongoHelper)
+        insert_users(mongoHelper)
         read_and_insert_activities_and_trackpoints_for_users(mongoHelper)
         mongoHelper.show_coll()
         # mongoHelper.insert_documents(collection_name="Person")
